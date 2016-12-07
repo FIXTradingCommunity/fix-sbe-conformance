@@ -16,6 +16,6 @@
  * SBE test implementation using Real Logic sbe-tool
  * 
  * @author Don Mendelson
- * @see https://github.com/real-logic/simple-binary-encoding
+ * @see <a href="https://github.com/real-logic/simple-binary-encoding">Real Logic Simple Binary Encoding project</a>
  */
 package io.fixprotocol.sbe.conformance.rlimpl;
