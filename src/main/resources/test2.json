@@ -1,9 +1,9 @@
 {
 	"version": {
 	"testVersion": "2016.1",
-	"testNumber": 1,
-	"messageSchema": "TestSchema1.xml"
-	"injectMessageSchema": "TestSchema1.xml"
+	"testNumber": 2,
+	"messageSchema": "TestSchema1.xml",
+	"injectMessageSchema": "TestSchema2.xml"
 	},
 	"inject": {
 		"messages": [
@@ -17,7 +17,8 @@
 		    "38": 700,
 		    "37": "2",
 		    "44": 17.56,
-		    "99": null
+		    "99": null,
+		    "110": 200
 			}
 		]
     },

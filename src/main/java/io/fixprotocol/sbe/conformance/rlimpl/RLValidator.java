@@ -2,37 +2,17 @@ package io.fixprotocol.sbe.conformance.rlimpl;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.agrona.DirectBuffer;
-import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
 
 import io.fixprotocol.sbe.conformance.MessageValues;
-import io.fixprotocol.sbe.conformance.Responder;
 import io.fixprotocol.sbe.conformance.TestException;
 import io.fixprotocol.sbe.conformance.Validator;
 import io.fixprotocol.sbe.conformance.json.JsonMessageSource;
 import io.fixprotocol.sbe.conformance.json.JsonMessageSource.Message;
-import io.fixprotocol.sbe.conformance.suite1.DecimalEncodingDecoder;
-import io.fixprotocol.sbe.conformance.suite1.DecimalEncodingEncoder;
-import io.fixprotocol.sbe.conformance.suite1.ExecTypeEnum;
-import io.fixprotocol.sbe.conformance.suite1.ExecutionReportDecoder;
-import io.fixprotocol.sbe.conformance.suite1.ExecutionReportDecoder.FillsGrpDecoder;
-import io.fixprotocol.sbe.conformance.suite1.ExecutionReportEncoder;
-import io.fixprotocol.sbe.conformance.suite1.MONTH_YEAREncoder;
-import io.fixprotocol.sbe.conformance.suite1.MessageHeaderDecoder;
-import io.fixprotocol.sbe.conformance.suite1.MessageHeaderEncoder;
-import io.fixprotocol.sbe.conformance.suite1.NewOrderSingleDecoder;
-import io.fixprotocol.sbe.conformance.suite1.OrdStatusEnum;
-import io.fixprotocol.sbe.conformance.suite1.QtyEncodingDecoder;
-import io.fixprotocol.sbe.conformance.suite1.QtyEncodingEncoder;
-import io.fixprotocol.sbe.conformance.suite1.SideEnum;
-import io.fixprotocol.sbe.conformance.suite1.ExecutionReportEncoder.FillsGrpEncoder;
-import io.fixprotocol.sbe.conformance.suite1.MONTH_YEARDecoder;
 
 /**
  * Tests the Real Logic implementation of SBE
@@ -41,6 +21,13 @@ import io.fixprotocol.sbe.conformance.suite1.MONTH_YEARDecoder;
  *
  */
 public class RLValidator implements Validator {
+
+  private String[] args;
+  private int testNumber;
+
+  public RLValidator(String[] args) {
+    this.args = args;
+  }
 
   /**
    * Invokes the Real Logic implementation of SBE to produce test results
@@ -58,7 +45,11 @@ public class RLValidator implements Validator {
       usage();
       System.exit(1);
     }
-    Validator tester = new RLValidator();
+    RLValidator tester = new RLValidator(args);
+    tester.validateAll();
+  }
+
+  public void validateAll() throws IOException, TestException {
     File plan = new File(args[0]);
     File in = new File(args[1]);
 
@@ -68,14 +59,12 @@ public class RLValidator implements Validator {
         if (!jsonMessageSource.getTestVersion().equals("2016.1")) {
           throw new IllegalArgumentException("Unexpected test version");
         }
-        if (jsonMessageSource.getTestNumber() != 1) {
-          throw new IllegalArgumentException("Unexpected test number");
-        }
+        this.testNumber = jsonMessageSource.getTestNumber();
+
         for (int index = 0; index < jsonMessageSource.getResponseMessageCount(); index++) {
           Message message = jsonMessageSource.getResponseMessage(index);
           Message sourceMessage = jsonMessageSource.getInjectMessage(index);
-          tester.validate(inputStream, message, sourceMessage);
-
+          validate(inputStream, message, sourceMessage);
         }
       }
     }
@@ -87,96 +76,130 @@ public class RLValidator implements Validator {
   }
 
   @Override
-  public void validate(InputStream inputStream, MessageValues values, MessageValues sourceValues) throws IOException, TestException {
-    doTest1(inputStream, values, sourceValues);
+  public void validate(InputStream inputStream, MessageValues values, MessageValues sourceValues)
+      throws IOException, TestException {
+    switch (testNumber) {
+      case 1:
+        doTest1(inputStream, values, sourceValues);
+        break;
+      case 2:
+        doTest1(inputStream, values, sourceValues);
+        break;        
+      default:
+        throw new IllegalArgumentException("Unexpected test number " + testNumber);
+    }
   }
 
 
-  private void compareInt(int actual, int nullValue, String id, MessageValues values, TestException testException) {
+  private void compareInt(int actual, int nullValue, String id, MessageValues values,
+      TestException testException) {
     int expected = values.getInt(id, nullValue);
     if (expected != actual) {
-      testException.addDetail("Invalid field " + id, Integer.toString(expected), Integer.toString(actual));
+      testException.addDetail("Invalid field " + id, Integer.toString(expected),
+          Integer.toString(actual));
     }
   }
 
-  private void compareLong(long actual, long nullValue, String id, MessageValues values, TestException testException) {
+  private void compareLong(long actual, long nullValue, String id, MessageValues values,
+      TestException testException) {
     long expected = values.getLong(id, nullValue);
     if (expected != actual) {
-      testException.addDetail("Invalid field " + id, Long.toString(expected), Long.toString(actual));
+      testException.addDetail("Invalid field " + id, Long.toString(expected),
+          Long.toString(actual));
     }
   }
 
-  private void compareString(String actual, String id, MessageValues values, TestException testException) {
+  private void compareString(String actual, String id, MessageValues values,
+      TestException testException) {
     String expected = values.getString(id);
     if (!expected.equals(actual)) {
       testException.addDetail("Invalid field " + id, expected, actual);
     }
   }
-  
-  private void doTest1(InputStream in, MessageValues values, MessageValues sourceValues) throws IOException, TestException {
+
+  private void doTest1(InputStream in, MessageValues values, MessageValues sourceValues)
+      throws IOException, TestException {
     TestException testException = new TestException();
     int inOffset = 0;
     byte[] inBytes = new byte[4096];
     in.read(inBytes, inOffset, inBytes.length);
     DirectBuffer inBuffer = new UnsafeBuffer(inBytes);
-    MessageHeaderDecoder messageHeaderDecoder = new MessageHeaderDecoder();
+    io.fixprotocol.sbe.conformance.schema1.MessageHeaderDecoder messageHeaderDecoder =
+        new io.fixprotocol.sbe.conformance.schema1.MessageHeaderDecoder();
     messageHeaderDecoder.wrap(inBuffer, inOffset);
     int templateId = messageHeaderDecoder.templateId();
-    if (templateId != ExecutionReportDecoder.TEMPLATE_ID) {
-      testException.addDetail("Unexpected message type", Integer.toString(ExecutionReportDecoder.TEMPLATE_ID), 
+    if (templateId != io.fixprotocol.sbe.conformance.schema1.ExecutionReportDecoder.TEMPLATE_ID) {
+      testException.addDetail("Unexpected message type",
+          Integer
+              .toString(io.fixprotocol.sbe.conformance.schema1.ExecutionReportDecoder.TEMPLATE_ID),
           Integer.toString(templateId));
       throw testException;
     }
     inOffset += messageHeaderDecoder.encodedLength();
-    ExecutionReportDecoder executionDecoder = new ExecutionReportDecoder();
-    executionDecoder.wrap(inBuffer, inOffset, messageHeaderDecoder.blockLength(), messageHeaderDecoder.version());
+    io.fixprotocol.sbe.conformance.schema1.ExecutionReportDecoder executionDecoder =
+        new io.fixprotocol.sbe.conformance.schema1.ExecutionReportDecoder();
+    executionDecoder.wrap(inBuffer, inOffset, messageHeaderDecoder.blockLength(),
+        messageHeaderDecoder.version());
 
     compareString(executionDecoder.orderID(), "37", values, testException);
     compareString(executionDecoder.execID(), "17", values, testException);
-    ExecTypeEnum execType = executionDecoder.execType();
-    compareString(String.valueOf((char)execType.value()), "150", values, testException); 
-    OrdStatusEnum ordStatus = executionDecoder.ordStatus();
-    compareString(String.valueOf((char)ordStatus.value()), "39", values, testException);
+    io.fixprotocol.sbe.conformance.schema1.ExecTypeEnum execType = executionDecoder.execType();
+    compareString(String.valueOf((char) execType.value()), "150", values, testException);
+    io.fixprotocol.sbe.conformance.schema1.OrdStatusEnum ordStatus = executionDecoder.ordStatus();
+    compareString(String.valueOf((char) ordStatus.value()), "39", values, testException);
     compareString(executionDecoder.symbol(), "55", sourceValues, testException);
-    
-    
-    MONTH_YEARDecoder monthYearDecoder = executionDecoder.maturityMonthYear();
+
+
+    io.fixprotocol.sbe.conformance.schema1.MONTH_YEARDecoder monthYearDecoder =
+        executionDecoder.maturityMonthYear();
     short month = monthYearDecoder.month();
-    if (month != MONTH_YEAREncoder.monthNullValue()) {
+    if (month != io.fixprotocol.sbe.conformance.schema1.MONTH_YEAREncoder.monthNullValue()) {
       testException.addDetail("Invalid field " + 200, "null", monthYearDecoder.toString());
     }
-    
-    SideEnum side = executionDecoder.side();
-    compareString(String.valueOf((char)side.value()), "54", sourceValues, testException); 
-    
-    QtyEncodingDecoder leavesQtyDecoder = executionDecoder.leavesQty();
-    compareInt(leavesQtyDecoder.mantissa(), QtyEncodingEncoder.mantissaNullValue(),
-        "151", values, testException);
-    
-    QtyEncodingDecoder cumQtyDecoder = executionDecoder.cumQty();
-    compareInt(cumQtyDecoder.mantissa(), QtyEncodingEncoder.mantissaNullValue(),
-        "14", values, testException);
-    
-    compareInt(executionDecoder.tradeDate(), ExecutionReportEncoder.tradeDateNullValue(),
-        "75", values, testException);
-    
+
+    io.fixprotocol.sbe.conformance.schema1.SideEnum side = executionDecoder.side();
+    compareString(String.valueOf((char) side.value()), "54", sourceValues, testException);
+
+    io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder leavesQtyDecoder =
+        executionDecoder.leavesQty();
+    compareInt(leavesQtyDecoder.mantissa(),
+        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(), "151",
+        values, testException);
+
+    io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder cumQtyDecoder =
+        executionDecoder.cumQty();
+    compareInt(cumQtyDecoder.mantissa(),
+        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(), "14", values,
+        testException);
+
+    compareInt(executionDecoder.tradeDate(),
+        io.fixprotocol.sbe.conformance.schema1.ExecutionReportEncoder.tradeDateNullValue(), "75",
+        values, testException);
+
     int fillsGrpCount = values.getGroupCount("FillsGrp");
-    FillsGrpDecoder fillsGrpDecoder = executionDecoder.fillsGrp();
+    io.fixprotocol.sbe.conformance.schema1.ExecutionReportDecoder.FillsGrpDecoder fillsGrpDecoder =
+        executionDecoder.fillsGrp();
     int actualCount = fillsGrpDecoder.count();
     if (fillsGrpCount != actualCount) {
-      testException.addDetail("Invalid FillsGrp count", Integer.toString(fillsGrpCount), 
+      testException.addDetail("Invalid FillsGrp count", Integer.toString(fillsGrpCount),
           Integer.toString(actualCount));
     }
-    
-    for (int i=0; i < fillsGrpCount && i < actualCount; i++) {
+
+    for (int i = 0; i < fillsGrpCount && i < actualCount; i++) {
       MessageValues fillGrpValues = values.getGroup("FillsGrp", i);
       fillsGrpDecoder.next();
-      DecimalEncodingDecoder fillPxEncoder = fillsGrpDecoder.fillPx();
-      compareLong(fillPxEncoder.mantissa(), DecimalEncodingEncoder.mantissaNullValue(), "1364", fillGrpValues, testException);
-      QtyEncodingDecoder fillQtyEncoder = fillsGrpDecoder.fillQty();
-      compareInt(fillQtyEncoder.mantissa(), QtyEncodingEncoder.mantissaNullValue(), "1365", fillGrpValues, testException);
+      io.fixprotocol.sbe.conformance.schema1.DecimalEncodingDecoder fillPxEncoder =
+          fillsGrpDecoder.fillPx();
+      compareLong(fillPxEncoder.mantissa(),
+          io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(), "1364",
+          fillGrpValues, testException);
+      io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder fillQtyEncoder =
+          fillsGrpDecoder.fillQty();
+      compareInt(fillQtyEncoder.mantissa(),
+          io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(), "1365",
+          fillGrpValues, testException);
     }
-    
+
     if (testException.hasDetails()) {
       throw testException;
     }
