@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
@@ -57,20 +58,21 @@ public class RLUnderTest implements Responder {
 
   private void respondAll()
       throws IllegalArgumentException, IOException, TestException, FileNotFoundException {
-    File plan = new File(args[0]);
-    File in = new File(args[1]);
-    File out = new File(args[2]);
-    try (InputStream inputStream = new FileInputStream(in)) {
-      try (InputStream planInputStream = new FileInputStream(plan)) {
-        JsonMessageSource jsonMessageSource = new JsonMessageSource(planInputStream);
+    final ClassLoader classLoader = getClass().getClassLoader();
+    final File plan = new File(classLoader.getResource(args[0]).getFile());
+    final File in = new File(args[1]);
+    final File out = new File(args[2]);
+    try (final InputStream inputStream = new FileInputStream(in)) {
+      try (final InputStream planInputStream = new FileInputStream(plan)) {
+        final JsonMessageSource jsonMessageSource = new JsonMessageSource(planInputStream);
         if (!jsonMessageSource.getTestVersion().equals("2016.1")) {
           throw new IllegalArgumentException("Unexpected test version");
         }
         this.testNumber = jsonMessageSource.getTestNumber();
 
-        try (FileOutputStream outputStream = new FileOutputStream(out)) {
+        try (final FileOutputStream outputStream = new FileOutputStream(out)) {
           for (int index = 0; index < jsonMessageSource.getResponseMessageCount(); index++) {
-            Message message = jsonMessageSource.getResponseMessage(index);
+            final Message message = jsonMessageSource.getResponseMessage(index);
             respond(inputStream, message, outputStream);
           }
         }
@@ -92,7 +94,7 @@ public class RLUnderTest implements Responder {
         break;
       case 2:
         doTest2(inputStream, values, outputStream);
-        break;        
+        break;
       default:
         throw new IllegalArgumentException("Unexpected test number " + testNumber);
     }
@@ -149,12 +151,20 @@ public class RLUnderTest implements Responder {
     executionEncoder.side(orderDecoder.side());
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder leavesQtyEncoder =
         executionEncoder.leavesQty();
-    leavesQtyEncoder.mantissa(values.getInt("151",
-        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue()));
+    leavesQtyEncoder.mantissa(values
+        .getDecimal("151",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder cumQtyEncoder =
         executionEncoder.cumQty();
-    cumQtyEncoder.mantissa(values.getInt("14",
-        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue()));
+    cumQtyEncoder.mantissa(values
+        .getDecimal("14",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
     executionEncoder.tradeDate(values.getInt("75",
         io.fixprotocol.sbe.conformance.schema1.ExecutionReportEncoder.tradeDateNullValue()));
 
@@ -166,12 +176,20 @@ public class RLUnderTest implements Responder {
       fillsGrpEncoder.next();
       io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder fillPxEncoder =
           fillsGrpEncoder.fillPx();
-      fillPxEncoder.mantissa(fillGrpValues.getLong("1364",
-          io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue()));
+      BigDecimal fillPx = fillGrpValues.getDecimal("1364",
+          BigDecimal.valueOf(
+              io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+              -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+      fillPxEncoder.mantissa(fillPx
+          .movePointRight(-fillPxEncoder.exponent()).longValue());
       io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder fillQtyEncoder =
           fillsGrpEncoder.fillQty();
-      fillQtyEncoder.mantissa(fillGrpValues.getInt("1365",
-          io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue()));
+      fillQtyEncoder.mantissa(fillGrpValues
+          .getDecimal("1365",
+              BigDecimal.valueOf(
+                  io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                  -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+          .intValue());
     }
 
     outFile.write(outBytes, 0, outOffset + executionEncoder.encodedLength());
@@ -228,12 +246,20 @@ public class RLUnderTest implements Responder {
     executionEncoder.side(orderDecoder.side());
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder leavesQtyEncoder =
         executionEncoder.leavesQty();
-    leavesQtyEncoder.mantissa(values.getInt("151",
-        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue()));
+    leavesQtyEncoder.mantissa(values
+        .getDecimal("151",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder cumQtyEncoder =
         executionEncoder.cumQty();
-    cumQtyEncoder.mantissa(values.getInt("14",
-        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue()));
+    cumQtyEncoder.mantissa(values
+        .getDecimal("14",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
     executionEncoder.tradeDate(values.getInt("75",
         io.fixprotocol.sbe.conformance.schema1.ExecutionReportEncoder.tradeDateNullValue()));
 
@@ -245,12 +271,20 @@ public class RLUnderTest implements Responder {
       fillsGrpEncoder.next();
       io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder fillPxEncoder =
           fillsGrpEncoder.fillPx();
-      fillPxEncoder.mantissa(fillGrpValues.getLong("1364",
-          io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue()));
+      BigDecimal fillPx = fillGrpValues.getDecimal("1364",
+          BigDecimal.valueOf(
+              io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+              -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+      fillPxEncoder.mantissa(fillPx
+          .movePointRight(-fillPxEncoder.exponent()).longValue());
       io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder fillQtyEncoder =
           fillsGrpEncoder.fillQty();
-      fillQtyEncoder.mantissa(fillGrpValues.getInt("1365",
-          io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue()));
+      fillQtyEncoder.mantissa(fillGrpValues
+          .getDecimal("1365",
+              BigDecimal.valueOf(
+                  io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                  -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+          .intValue());
     }
 
     outFile.write(outBytes, 0, outOffset + executionEncoder.encodedLength());

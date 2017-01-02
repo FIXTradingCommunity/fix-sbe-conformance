@@ -1,6 +1,7 @@
 package io.fixprotocol.sbe.conformance.json;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -32,6 +33,25 @@ public class JsonMessageSource {
     }
 
     @Override
+    public BigDecimal getDecimal(String id, BigDecimal nullValue) {
+      if (jsonObject.isNull(id)) {
+        return nullValue;
+      } else {
+        return jsonObject.getJsonNumber(id).bigDecimalValue();
+      }
+    }
+
+    @Override
+    public MessageValues getGroup(String name, int index) {
+      return new MessageSource((JsonObject) jsonObject.getJsonArray(name).get(index));
+    }
+
+    @Override
+    public int getGroupCount(String name) {
+      return jsonObject.getJsonArray(name).size();
+    }
+
+    @Override
     public int getInt(String id, int nullValue) {
       if (jsonObject.isNull(id)) {
         return nullValue;
@@ -53,23 +73,9 @@ public class JsonMessageSource {
     public String getString(String id) {
       return jsonObject.getJsonString(id).getString();
     }
-
-    @Override
-    public MessageValues getGroup(String name, int index) {
-      return new MessageSource((JsonObject) jsonObject.getJsonArray(name).get(index));
-    }
-
-    @Override
-    public int getGroupCount(String name) {
-      return jsonObject.getJsonArray(name).size();
-    }
-
-
   }
 
   private JsonObject jsonObject;
-
-
 
   public JsonMessageSource(InputStream inputStream) {
     JsonReader reader = Json.createReader(inputStream);
@@ -92,20 +98,20 @@ public class JsonMessageSource {
     return getResponseMessages().size();
   }
   
-  private JsonArray getInjectMessages() {
-    return jsonObject.getJsonObject("inject").getJsonArray("messages");
-  }
-
-  private JsonArray getResponseMessages() {
-    return jsonObject.getJsonObject("respond").getJsonArray("messages");
-  }
-  
   public int getTestNumber() {
     return jsonObject.getJsonObject("version").getInt("testNumber");
   }
 
   public String getTestVersion() {
     return jsonObject.getJsonObject("version").getJsonString("testVersion").getString();
+  }
+  
+  private JsonArray getInjectMessages() {
+    return jsonObject.getJsonObject("inject").getJsonArray("messages");
+  }
+
+  private JsonArray getResponseMessages() {
+    return jsonObject.getJsonObject("respond").getJsonArray("messages");
   }
 
 }

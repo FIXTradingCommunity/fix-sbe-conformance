@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -42,6 +43,7 @@ public class RLinjector implements Injector {
     RLinjector injector = new RLinjector(args);
     injector.injectAll();
   }
+
   public static void usage() {
     System.out.println(
         "Usage: io.fixprotocol.sbe.conformance.rlimpl.RLinjector <input-test-file> <output-sbe-file>");
@@ -69,18 +71,19 @@ public class RLinjector implements Injector {
   }
 
   public void injectAll() throws FileNotFoundException, IllegalArgumentException, IOException {
-    File in = new File(args[0]);
-    File out = new File(args[1]);
-    InputStream inputStream = new FileInputStream(in);
-    JsonMessageSource jsonInjectorSource = new JsonMessageSource(inputStream);
+    final ClassLoader classLoader = getClass().getClassLoader();
+    final File in = new File(classLoader.getResource(args[0]).getFile());
+    final File out = new File(args[1]);
+    final InputStream inputStream = new FileInputStream(in);
+    final JsonMessageSource jsonInjectorSource = new JsonMessageSource(inputStream);
     if (!jsonInjectorSource.getTestVersion().equals("2016.1")) {
       throw new IllegalArgumentException("Unexpected test version");
     }
     this.testNumber = jsonInjectorSource.getTestNumber();
 
-    try (FileOutputStream outStream = new FileOutputStream(out)) {
+    try (final FileOutputStream outStream = new FileOutputStream(out)) {
       for (int index = 0; index < jsonInjectorSource.getInjectMessageCount(); index++) {
-        Message message = jsonInjectorSource.getInjectMessage(index);
+        final Message message = jsonInjectorSource.getInjectMessage(index);
         inject(message, outStream);
       }
     }
@@ -90,8 +93,10 @@ public class RLinjector implements Injector {
     int offset = 0;
     byte[] bytes = new byte[4096];
     MutableDirectBuffer buffer = new UnsafeBuffer(bytes);
-    io.fixprotocol.sbe.conformance.schema1.NewOrderSingleEncoder orderEncoder = new io.fixprotocol.sbe.conformance.schema1.NewOrderSingleEncoder();
-    io.fixprotocol.sbe.conformance.schema1.MessageHeaderEncoder messageHeaderEncoder = new io.fixprotocol.sbe.conformance.schema1.MessageHeaderEncoder();
+    io.fixprotocol.sbe.conformance.schema1.NewOrderSingleEncoder orderEncoder =
+        new io.fixprotocol.sbe.conformance.schema1.NewOrderSingleEncoder();
+    io.fixprotocol.sbe.conformance.schema1.MessageHeaderEncoder messageHeaderEncoder =
+        new io.fixprotocol.sbe.conformance.schema1.MessageHeaderEncoder();
     messageHeaderEncoder.wrap(buffer, offset);
     messageHeaderEncoder.blockLength(orderEncoder.sbeBlockLength())
         .templateId(orderEncoder.sbeTemplateId()).schemaId(orderEncoder.sbeSchemaId())
@@ -101,15 +106,37 @@ public class RLinjector implements Injector {
     orderEncoder.clOrdId(values.getString("11"));
     orderEncoder.account(values.getString("1"));
     orderEncoder.symbol(values.getString("55"));
-    orderEncoder.side(io.fixprotocol.sbe.conformance.schema1.SideEnum.get(values.getChar("54", io.fixprotocol.sbe.conformance.schema1.SideEnum.NULL_VAL.value())));
-    orderEncoder.transactTime(values.getLong("60", io.fixprotocol.sbe.conformance.schema1.NewOrderSingleEncoder.transactTimeNullValue()));
+    orderEncoder.side(io.fixprotocol.sbe.conformance.schema1.SideEnum.get(
+        values.getChar("54", io.fixprotocol.sbe.conformance.schema1.SideEnum.NULL_VAL.value())));
+    orderEncoder.transactTime(values.getLong("60",
+        io.fixprotocol.sbe.conformance.schema1.NewOrderSingleEncoder.transactTimeNullValue()));
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder qtyEncoder = orderEncoder.orderQty();
-    qtyEncoder.mantissa(values.getInt("38", io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()));
-    orderEncoder.ordType(io.fixprotocol.sbe.conformance.schema1.OrdTypeEnum.get(values.getChar("37", io.fixprotocol.sbe.conformance.schema1.OrdTypeEnum.NULL_VAL.value())));
-    io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder priceEncoder = orderEncoder.price();
-    priceEncoder.mantissa(values.getLong("44", io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue()));
-    io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder stopPriceEncoder = orderEncoder.stopPx();
-    stopPriceEncoder.mantissa(values.getLong("99", io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue()));
+    qtyEncoder.mantissa(values
+        .getDecimal("38",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
+    orderEncoder.ordType(io.fixprotocol.sbe.conformance.schema1.OrdTypeEnum.get(
+        values.getChar("37", io.fixprotocol.sbe.conformance.schema1.OrdTypeEnum.NULL_VAL.value())));
+    io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder priceEncoder =
+        orderEncoder.price();
+    BigDecimal price = values
+        .getDecimal("44",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+    priceEncoder.mantissa(price
+        .movePointRight(-priceEncoder.exponent()).longValue());
+    io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder stopPriceEncoder =
+        orderEncoder.stopPx();
+    BigDecimal stopPx = values
+        .getDecimal("99",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+    stopPriceEncoder.mantissa(stopPx
+        .movePointRight(-priceEncoder.exponent()).longValue());
 
     outFile.write(bytes, 0, offset + orderEncoder.encodedLength());
   }
@@ -118,8 +145,10 @@ public class RLinjector implements Injector {
     int offset = 0;
     byte[] bytes = new byte[4096];
     MutableDirectBuffer buffer = new UnsafeBuffer(bytes);
-    io.fixprotocol.sbe.conformance.schema2.NewOrderSingleEncoder orderEncoder = new io.fixprotocol.sbe.conformance.schema2.NewOrderSingleEncoder();
-    io.fixprotocol.sbe.conformance.schema2.MessageHeaderEncoder messageHeaderEncoder = new io.fixprotocol.sbe.conformance.schema2.MessageHeaderEncoder();
+    io.fixprotocol.sbe.conformance.schema2.NewOrderSingleEncoder orderEncoder =
+        new io.fixprotocol.sbe.conformance.schema2.NewOrderSingleEncoder();
+    io.fixprotocol.sbe.conformance.schema2.MessageHeaderEncoder messageHeaderEncoder =
+        new io.fixprotocol.sbe.conformance.schema2.MessageHeaderEncoder();
     messageHeaderEncoder.wrap(buffer, offset);
     messageHeaderEncoder.blockLength(orderEncoder.sbeBlockLength())
         .templateId(orderEncoder.sbeTemplateId()).schemaId(orderEncoder.sbeSchemaId())
@@ -129,18 +158,45 @@ public class RLinjector implements Injector {
     orderEncoder.clOrdId(values.getString("11"));
     orderEncoder.account(values.getString("1"));
     orderEncoder.symbol(values.getString("55"));
-    orderEncoder.side(io.fixprotocol.sbe.conformance.schema2.SideEnum.get(values.getChar("54", io.fixprotocol.sbe.conformance.schema2.SideEnum.NULL_VAL.value())));
-    orderEncoder.transactTime(values.getLong("60", io.fixprotocol.sbe.conformance.schema2.NewOrderSingleEncoder.transactTimeNullValue()));
+    orderEncoder.side(io.fixprotocol.sbe.conformance.schema2.SideEnum.get(
+        values.getChar("54", io.fixprotocol.sbe.conformance.schema2.SideEnum.NULL_VAL.value())));
+    orderEncoder.transactTime(values.getLong("60",
+        io.fixprotocol.sbe.conformance.schema2.NewOrderSingleEncoder.transactTimeNullValue()));
     io.fixprotocol.sbe.conformance.schema2.QtyEncodingEncoder qtyEncoder = orderEncoder.orderQty();
-    qtyEncoder.mantissa(values.getInt("38", io.fixprotocol.sbe.conformance.schema2.QtyEncodingEncoder.exponentNullValue()));
-    orderEncoder.ordType(io.fixprotocol.sbe.conformance.schema2.OrdTypeEnum.get(values.getChar("37", io.fixprotocol.sbe.conformance.schema2.OrdTypeEnum.NULL_VAL.value())));
-    io.fixprotocol.sbe.conformance.schema2.DecimalEncodingEncoder priceEncoder = orderEncoder.price();
-    priceEncoder.mantissa(values.getLong("44", io.fixprotocol.sbe.conformance.schema2.DecimalEncodingEncoder.mantissaNullValue()));
-    io.fixprotocol.sbe.conformance.schema2.DecimalEncodingEncoder stopPriceEncoder = orderEncoder.stopPx();
-    stopPriceEncoder.mantissa(values.getLong("99", io.fixprotocol.sbe.conformance.schema2.DecimalEncodingEncoder.mantissaNullValue()));
+    qtyEncoder.mantissa(values
+        .getDecimal("38",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
+    orderEncoder.ordType(io.fixprotocol.sbe.conformance.schema2.OrdTypeEnum.get(
+        values.getChar("37", io.fixprotocol.sbe.conformance.schema2.OrdTypeEnum.NULL_VAL.value())));
+    io.fixprotocol.sbe.conformance.schema2.DecimalEncodingEncoder priceEncoder =
+        orderEncoder.price();
+    BigDecimal price = values
+        .getDecimal("44",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+    priceEncoder.mantissa(price
+        .movePointRight(-priceEncoder.exponent()).longValue());
+    io.fixprotocol.sbe.conformance.schema2.DecimalEncodingEncoder stopPriceEncoder =
+        orderEncoder.stopPx();
+    BigDecimal stopPx = values
+        .getDecimal("99",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+    stopPriceEncoder.mantissa(stopPx
+        .movePointRight(-priceEncoder.exponent()).longValue());
     io.fixprotocol.sbe.conformance.schema2.QtyEncodingEncoder minQtyEncoder = orderEncoder.minQty();
-    minQtyEncoder.mantissa(values.getInt("110", io.fixprotocol.sbe.conformance.schema2.QtyEncodingEncoder.exponentNullValue()));
-    
+    minQtyEncoder.mantissa(values
+        .getDecimal("110",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
+
     outFile.write(bytes, 0, offset + orderEncoder.encodedLength());
   }
 

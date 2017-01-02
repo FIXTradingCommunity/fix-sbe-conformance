@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 
 import org.agrona.DirectBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
@@ -50,20 +51,21 @@ public class RLValidator implements Validator {
   }
 
   public void validateAll() throws IOException, TestException {
-    File plan = new File(args[0]);
-    File in = new File(args[1]);
+    final ClassLoader classLoader = getClass().getClassLoader();
+    final File plan = new File(classLoader.getResource(args[0]).getFile());
+    final File in = new File(args[1]);
 
-    try (InputStream inputStream = new FileInputStream(in)) {
-      try (InputStream planInputStream = new FileInputStream(plan)) {
-        JsonMessageSource jsonMessageSource = new JsonMessageSource(planInputStream);
+    try (final InputStream inputStream = new FileInputStream(in)) {
+      try (final InputStream planInputStream = new FileInputStream(plan)) {
+        final JsonMessageSource jsonMessageSource = new JsonMessageSource(planInputStream);
         if (!jsonMessageSource.getTestVersion().equals("2016.1")) {
           throw new IllegalArgumentException("Unexpected test version");
         }
         this.testNumber = jsonMessageSource.getTestNumber();
 
         for (int index = 0; index < jsonMessageSource.getResponseMessageCount(); index++) {
-          Message message = jsonMessageSource.getResponseMessage(index);
-          Message sourceMessage = jsonMessageSource.getInjectMessage(index);
+          final Message message = jsonMessageSource.getResponseMessage(index);
+          final Message sourceMessage = jsonMessageSource.getInjectMessage(index);
           validate(inputStream, message, sourceMessage);
         }
       }
@@ -84,12 +86,19 @@ public class RLValidator implements Validator {
         break;
       case 2:
         doTest1(inputStream, values, sourceValues);
-        break;        
+        break;
       default:
         throw new IllegalArgumentException("Unexpected test number " + testNumber);
     }
   }
 
+  private void compareDecimal(BigDecimal actual, BigDecimal nullValue, String id,
+      MessageValues values, TestException testException) {
+    BigDecimal expected = values.getDecimal(id, nullValue);
+    if (!expected.equals(actual)) {
+      testException.addDetail("Invalid field " + id, expected.toString(), actual.toString());
+    }
+  }
 
   private void compareInt(int actual, int nullValue, String id, MessageValues values,
       TestException testException) {
@@ -162,15 +171,19 @@ public class RLValidator implements Validator {
 
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder leavesQtyDecoder =
         executionDecoder.leavesQty();
-    compareInt(leavesQtyDecoder.mantissa(),
-        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(), "151",
-        values, testException);
+    compareDecimal(BigDecimal.valueOf(leavesQtyDecoder.mantissa(), -leavesQtyDecoder.exponent()),
+        BigDecimal.valueOf(
+            io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.mantissaNullValue(),
+            -io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.exponentNullValue()),
+        "151", values, testException);
 
     io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder cumQtyDecoder =
         executionDecoder.cumQty();
-    compareInt(cumQtyDecoder.mantissa(),
-        io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(), "14", values,
-        testException);
+    compareDecimal(BigDecimal.valueOf(cumQtyDecoder.mantissa(), -cumQtyDecoder.exponent()),
+        BigDecimal.valueOf(
+            io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.mantissaNullValue(),
+            -io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.exponentNullValue()),
+        "14", values, testException);
 
     compareInt(executionDecoder.tradeDate(),
         io.fixprotocol.sbe.conformance.schema1.ExecutionReportEncoder.tradeDateNullValue(), "75",
@@ -188,16 +201,21 @@ public class RLValidator implements Validator {
     for (int i = 0; i < fillsGrpCount && i < actualCount; i++) {
       MessageValues fillGrpValues = values.getGroup("FillsGrp", i);
       fillsGrpDecoder.next();
-      io.fixprotocol.sbe.conformance.schema1.DecimalEncodingDecoder fillPxEncoder =
+      io.fixprotocol.sbe.conformance.schema1.DecimalEncodingDecoder fillPxDecoder =
           fillsGrpDecoder.fillPx();
-      compareLong(fillPxEncoder.mantissa(),
-          io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(), "1364",
-          fillGrpValues, testException);
-      io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder fillQtyEncoder =
+      BigDecimal actualPrice = BigDecimal.valueOf(fillPxDecoder.mantissa(), -fillPxDecoder.exponent());
+      compareDecimal(actualPrice,
+          BigDecimal.valueOf(
+              io.fixprotocol.sbe.conformance.schema1.DecimalEncodingDecoder.mantissaNullValue(),
+              -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingDecoder.exponentNullValue()),
+          "1364", fillGrpValues, testException);
+      io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder fillQtyDecoder =
           fillsGrpDecoder.fillQty();
-      compareInt(fillQtyEncoder.mantissa(),
-          io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(), "1365",
-          fillGrpValues, testException);
+      compareDecimal(BigDecimal.valueOf(fillQtyDecoder.mantissa(), -fillQtyDecoder.exponent()),
+          BigDecimal.valueOf(
+              io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.mantissaNullValue(),
+              -io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.exponentNullValue()),
+          "1365", fillGrpValues, testException);
     }
 
     if (testException.hasDetails()) {
