@@ -85,7 +85,7 @@ public class RLValidator implements Validator {
         doTest1(inputStream, values, sourceValues);
         break;
       case 2:
-        doTest1(inputStream, values, sourceValues);
+        doTest2(inputStream, values, sourceValues);
         break;
       case 3:
         doTest3(inputStream, values, sourceValues);
@@ -219,6 +219,104 @@ public class RLValidator implements Validator {
           BigDecimal.valueOf(
               io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.mantissaNullValue(),
               -io.fixprotocol.sbe.conformance.schema1.QtyEncodingDecoder.exponentNullValue()),
+          "1365", fillGrpValues, testException);
+    }
+
+    if (testException.hasDetails()) {
+      throw testException;
+    }
+  }
+
+  private void doTest2(InputStream in, MessageValues values, MessageValues sourceValues)
+      throws IOException, TestException {
+    TestException testException = new TestException();
+    int inOffset = 0;
+    byte[] inBytes = new byte[4096];
+    in.read(inBytes, inOffset, inBytes.length);
+    DirectBuffer inBuffer = new UnsafeBuffer(inBytes);
+    io.fixprotocol.sbe.conformance.schema2.MessageHeaderDecoder messageHeaderDecoder =
+        new io.fixprotocol.sbe.conformance.schema2.MessageHeaderDecoder();
+    messageHeaderDecoder.wrap(inBuffer, inOffset);
+    int templateId = messageHeaderDecoder.templateId();
+    if (templateId != io.fixprotocol.sbe.conformance.schema2.ExecutionReportDecoder.TEMPLATE_ID) {
+      testException.addDetail("Unexpected message type",
+          Integer
+              .toString(io.fixprotocol.sbe.conformance.schema2.ExecutionReportDecoder.TEMPLATE_ID),
+          Integer.toString(templateId));
+      throw testException;
+    }
+    inOffset += messageHeaderDecoder.encodedLength();
+    io.fixprotocol.sbe.conformance.schema2.ExecutionReportDecoder executionDecoder =
+        new io.fixprotocol.sbe.conformance.schema2.ExecutionReportDecoder();
+    executionDecoder.wrap(inBuffer, inOffset, messageHeaderDecoder.blockLength(),
+        messageHeaderDecoder.version());
+
+    compareString(executionDecoder.orderID(), "37", values, testException);
+    compareString(executionDecoder.execID(), "17", values, testException);
+    io.fixprotocol.sbe.conformance.schema2.ExecTypeEnum execType = executionDecoder.execType();
+    compareString(String.valueOf((char) execType.value()), "150", values, testException);
+    io.fixprotocol.sbe.conformance.schema2.OrdStatusEnum ordStatus = executionDecoder.ordStatus();
+    compareString(String.valueOf((char) ordStatus.value()), "39", values, testException);
+    compareString(executionDecoder.symbol(), "55", sourceValues, testException);
+
+
+    io.fixprotocol.sbe.conformance.schema2.MONTH_YEARDecoder monthYearDecoder =
+        executionDecoder.maturityMonthYear();
+    short month = monthYearDecoder.month();
+    if (month != io.fixprotocol.sbe.conformance.schema2.MONTH_YEAREncoder.monthNullValue()) {
+      testException.addDetail("Invalid field " + 200, "null", monthYearDecoder.toString());
+    }
+
+    io.fixprotocol.sbe.conformance.schema2.SideEnum side = executionDecoder.side();
+    compareString(String.valueOf((char) side.value()), "54", sourceValues, testException);
+
+    io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder leavesQtyDecoder =
+        executionDecoder.leavesQty();
+    compareDecimal(BigDecimal.valueOf(leavesQtyDecoder.mantissa(), -leavesQtyDecoder.exponent()),
+        BigDecimal.valueOf(
+            io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder.mantissaNullValue(),
+            -io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder.exponentNullValue()),
+        "151", values, testException);
+
+    io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder cumQtyDecoder =
+        executionDecoder.cumQty();
+    compareDecimal(BigDecimal.valueOf(cumQtyDecoder.mantissa(), -cumQtyDecoder.exponent()),
+        BigDecimal.valueOf(
+            io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder.mantissaNullValue(),
+            -io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder.exponentNullValue()),
+        "14", values, testException);
+
+    compareInt(executionDecoder.tradeDate(),
+        io.fixprotocol.sbe.conformance.schema2.ExecutionReportEncoder.tradeDateNullValue(), "75",
+        values, testException);
+
+    int fillsGrpCount = values.getGroupCount("FillsGrp");
+    io.fixprotocol.sbe.conformance.schema2.ExecutionReportDecoder.FillsGrpDecoder fillsGrpDecoder =
+        executionDecoder.fillsGrp();
+    int actualCount = fillsGrpDecoder.count();
+    if (fillsGrpCount != actualCount) {
+      testException.addDetail("Invalid FillsGrp count", Integer.toString(fillsGrpCount),
+          Integer.toString(actualCount));
+    }
+
+    for (int i = 0; i < fillsGrpCount && i < actualCount; i++) {
+      MessageValues fillGrpValues = values.getGroup("FillsGrp", i);
+      fillsGrpDecoder.next();
+      io.fixprotocol.sbe.conformance.schema2.DecimalEncodingDecoder fillPxDecoder =
+          fillsGrpDecoder.fillPx();
+      BigDecimal actualPrice =
+          BigDecimal.valueOf(fillPxDecoder.mantissa(), -fillPxDecoder.exponent());
+      compareDecimal(actualPrice,
+          BigDecimal.valueOf(
+              io.fixprotocol.sbe.conformance.schema2.DecimalEncodingDecoder.mantissaNullValue(),
+              -io.fixprotocol.sbe.conformance.schema2.DecimalEncodingDecoder.exponentNullValue()),
+          "1364", fillGrpValues, testException);
+      io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder fillQtyDecoder =
+          fillsGrpDecoder.fillQty();
+      compareDecimal(BigDecimal.valueOf(fillQtyDecoder.mantissa(), -fillQtyDecoder.exponent()),
+          BigDecimal.valueOf(
+              io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder.mantissaNullValue(),
+              -io.fixprotocol.sbe.conformance.schema2.QtyEncodingDecoder.exponentNullValue()),
           "1365", fillGrpValues, testException);
     }
 
