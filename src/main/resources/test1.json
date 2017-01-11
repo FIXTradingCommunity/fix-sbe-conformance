@@ -1,47 +1,48 @@
 {
 	"version": {
-	"testVersion": "2016.1",
-	"testNumber": 1,
-	"messageSchema": "TestSchema1.xml",
-	"injectMessageSchema": "TestSchema1.xml"
+		"testVersion": "2016.1",
+		"testNumber": 1,
+		"messageSchema": "TestSchema1.xml",
+		"injectMessageSchema": "TestSchema1.xml",
+		"comment": "Read a flat message and respond with a message containing a repeating group"
 	},
 	"inject": {
 		"messages": [
 			{
-			"template": 99,
-			"11": "CL000001",
-		    "1": "ACCT0001",
-		    "55": "SYMBOL.A",
-		    "54": "2",
-		    "60": 1480936563000000,
-		    "38": 700,
-		    "37": "2",
-		    "44": 17.560,
-		    "99": null
+				"template": 99,
+				"11": "CL000001",
+				"1": "ACCT0001",
+				"55": "SYMBOL.A",
+				"54": "2",
+				"60": 1480936563000000,
+				"38": 700,
+				"37": "2",
+				"44": 17.560,
+				"99": null
 			}
 		]
-    },
-    "respond": {
+	},
+	"respond": {
 		"messages": [
 			{
-			"template": 98,
-			"37": "OR000001",
-			"17": "EX000001",
-			"150": "F",
-			"39": "1",
-			"55": true,
-			"200": null,
-			"54": true,
-			"151": 400,
-			"14": 300,
-			"75": 17140,
-			"FillsGrp": [
-				{
-					"1364": 17.560,
-					"1365": 300
-				}
-			]
+				"template": 98,
+				"37": "OR000001",
+				"17": "EX000001",
+				"150": "F",
+				"39": "1",
+				"55": true,
+				"200": null,
+				"54": true,
+				"151": 400,
+				"14": 300,
+				"75": 17140,
+				"FillsGrp": [
+					{
+						"1364": 17.560,
+						"1365": 300
+					}
+				]
 			}
 		]
-    }
+	}
 }

@@ -65,6 +65,9 @@ public class RLinjector implements Injector {
       case 2:
         doInject2(values, out);
         break;
+      case 3:
+        doInject3(values, out);
+        break;
       default:
         throw new IllegalArgumentException("Unexpected test number");
     }
@@ -197,6 +200,65 @@ public class RLinjector implements Injector {
                 -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
         .intValue());
 
+    outFile.write(bytes, 0, offset + orderEncoder.encodedLength());
+  }
+
+  private void doInject3(MessageValues values, OutputStream outFile) throws IOException {
+    int offset = 0;
+    byte[] bytes = new byte[4096];
+    MutableDirectBuffer buffer = new UnsafeBuffer(bytes);
+    io.fixprotocol.sbe.conformance.schema3.NewOrderSingleEncoder orderEncoder =
+        new io.fixprotocol.sbe.conformance.schema3.NewOrderSingleEncoder();
+    io.fixprotocol.sbe.conformance.schema3.MessageHeaderEncoder messageHeaderEncoder =
+        new io.fixprotocol.sbe.conformance.schema3.MessageHeaderEncoder();
+    messageHeaderEncoder.wrap(buffer, offset);
+    messageHeaderEncoder.blockLength(orderEncoder.sbeBlockLength())
+        .templateId(orderEncoder.sbeTemplateId()).schemaId(orderEncoder.sbeSchemaId())
+        .version(orderEncoder.sbeSchemaVersion());
+    offset += messageHeaderEncoder.encodedLength();
+    orderEncoder.wrap(buffer, offset);
+    orderEncoder.clOrdId(values.getString("11"));
+    orderEncoder.account(values.getString("1"));
+    orderEncoder.symbol(values.getString("55"));
+    orderEncoder.side(io.fixprotocol.sbe.conformance.schema3.SideEnum.get(
+        values.getChar("54", io.fixprotocol.sbe.conformance.schema3.SideEnum.NULL_VAL.value())));
+    orderEncoder.transactTime(values.getLong("60",
+        io.fixprotocol.sbe.conformance.schema3.NewOrderSingleEncoder.transactTimeNullValue()));
+    io.fixprotocol.sbe.conformance.schema3.QtyEncodingEncoder qtyEncoder = orderEncoder.orderQty();
+    qtyEncoder.mantissa(values
+        .getDecimal("38",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
+    orderEncoder.ordType(io.fixprotocol.sbe.conformance.schema3.OrdTypeEnum.get(
+        values.getChar("37", io.fixprotocol.sbe.conformance.schema3.OrdTypeEnum.NULL_VAL.value())));
+    io.fixprotocol.sbe.conformance.schema3.DecimalEncodingEncoder priceEncoder =
+        orderEncoder.price();
+    BigDecimal price = values
+        .getDecimal("44",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+    priceEncoder.mantissa(price
+        .movePointRight(-priceEncoder.exponent()).longValue());
+    io.fixprotocol.sbe.conformance.schema3.DecimalEncodingEncoder stopPriceEncoder =
+        orderEncoder.stopPx();
+    BigDecimal stopPx = values
+        .getDecimal("99",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.DecimalEncodingEncoder.exponentNullValue()));
+    stopPriceEncoder.mantissa(stopPx
+        .movePointRight(-priceEncoder.exponent()).longValue());
+    io.fixprotocol.sbe.conformance.schema3.QtyEncodingEncoder minQtyEncoder = orderEncoder.minQty();
+    minQtyEncoder.mantissa(values
+        .getDecimal("110",
+            BigDecimal.valueOf(
+                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+        .intValue());
+    orderEncoder.complianceText(values.getString("2404"));
     outFile.write(bytes, 0, offset + orderEncoder.encodedLength());
   }
 

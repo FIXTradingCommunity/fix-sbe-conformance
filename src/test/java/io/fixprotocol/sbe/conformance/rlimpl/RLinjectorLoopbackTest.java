@@ -41,12 +41,12 @@ public class RLinjectorLoopbackTest {
 
   @Parameters
   public static Collection<Integer[]> data() {
-    return Arrays.asList(new Integer[][] {{0}, {1}});
+    return Arrays.asList(new Integer[][] {{0}, {1}, {2}});
   }
 
-  static final String[] injectorFiles = {"test1inject.sbe", "test2inject.sbe"};
-  static final String[] responderFiles = {"test1respond.sbe", "test2respond.sbe"};
-  static final String[] testFiles = {"test1.json", "test2.json"};
+  static final String[] injectorFiles = {"test1inject.sbe", "test2inject.sbe", "test3inject.sbe"};
+  static final String[] responderFiles = {"test1respond.sbe", "test2respond.sbe", "test3respond.sbe"};
+  static final String[] testFiles = {"test1.json", "test2.json", "test3.json"};
 
 
   @Test

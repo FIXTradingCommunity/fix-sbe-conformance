@@ -1,10 +1,10 @@
 {
 	"version": {
 		"testVersion": "2016.1",
-		"testNumber": 2,
-		"messageSchema": "TestSchema1.xml",
-		"injectMessageSchema": "TestSchema2.xml",
-		"comment": "Read a message created with a later version of the schema"
+		"testNumber": 1,
+		"messageSchema": "TestSchema3.xml",
+		"injectMessageSchema": "TestSchema3.xml",
+		"comment": "Read and write messages with variable-length fields"
 	},
 	"inject": {
 		"messages": [
@@ -19,7 +19,7 @@
 				"37": "2",
 				"44": 17.560,
 				"99": null,
-				"110": 200
+				"2404": "Compliance certified"
 			}
 		]
 	},
@@ -27,22 +27,19 @@
 		"messages": [
 			{
 				"template": 98,
-				"37": "OR000001",
-				"17": "EX000001",
-				"150": "F",
-				"39": "1",
+				"37": "        ",
+				"17": "        ",
+				"150": "8",
+				"39": "8",
 				"55": true,
 				"200": null,
 				"54": true,
-				"151": 400,
-				"14": 300,
+				"151": 0,
+				"14": 0,
 				"75": 17140,
-				"FillsGrp": [
-					{
-						"1364": 17.560,
-						"1365": 300
-					}
-				]
+				"48": "S1234567",
+				"FillsGrp": [],
+				"1328": "Market is closed"
 			}
 		]
 	}
