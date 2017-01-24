@@ -255,8 +255,8 @@ public class RLinjector implements Injector {
     minQtyEncoder.mantissa(values
         .getDecimal("110",
             BigDecimal.valueOf(
-                io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.mantissaNullValue(),
-                -io.fixprotocol.sbe.conformance.schema1.QtyEncodingEncoder.exponentNullValue()))
+                io.fixprotocol.sbe.conformance.schema3.QtyEncodingEncoder.mantissaNullValue(),
+                -io.fixprotocol.sbe.conformance.schema3.QtyEncodingEncoder.exponentNullValue()))
         .intValue());
     orderEncoder.complianceText(values.getString("2404"));
     outFile.write(bytes, 0, offset + orderEncoder.encodedLength());

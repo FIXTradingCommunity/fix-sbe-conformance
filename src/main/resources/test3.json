@@ -1,7 +1,7 @@
 {
 	"version": {
 		"testVersion": "2016.1",
-		"testNumber": 1,
+		"testNumber": 3,
 		"messageSchema": "TestSchema3.xml",
 		"injectMessageSchema": "TestSchema3.xml",
 		"comment": "Read and write messages with variable-length fields"
@@ -19,7 +19,8 @@
 				"37": "2",
 				"44": 17.560,
 				"99": null,
-				"2404": "Compliance certified"
+				"2404": "Compliance certified",
+				"110": 200
 			}
 		]
 	},
