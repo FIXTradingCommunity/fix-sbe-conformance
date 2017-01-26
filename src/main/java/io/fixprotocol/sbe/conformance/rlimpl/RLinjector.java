@@ -75,9 +75,8 @@ public class RLinjector implements Injector {
 
   public void injectAll() throws FileNotFoundException, IllegalArgumentException, IOException {
     final ClassLoader classLoader = getClass().getClassLoader();
-    final File in = new File(classLoader.getResource(args[0]).getFile());
     final File out = new File(args[1]);
-    final InputStream inputStream = new FileInputStream(in);
+    final InputStream inputStream = classLoader.getResourceAsStream(args[0]);
     final JsonMessageSource jsonInjectorSource = new JsonMessageSource(inputStream);
     if (!jsonInjectorSource.getTestVersion().equals("2016.1")) {
       throw new IllegalArgumentException("Unexpected test version");

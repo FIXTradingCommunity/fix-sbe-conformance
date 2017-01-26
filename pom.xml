@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.fixprotocol.sbe</groupId>
 	<artifactId>conformance</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<description>Conformance test suite for Simple Binary Encoding implementations</description>
 	<inceptionYear>2016</inceptionYear>

@@ -52,11 +52,10 @@ public class RLValidator implements Validator {
 
   public void validateAll() throws IOException, TestException {
     final ClassLoader classLoader = getClass().getClassLoader();
-    final File plan = new File(classLoader.getResource(args[0]).getFile());
     final File in = new File(args[1]);
 
     try (final InputStream inputStream = new FileInputStream(in)) {
-      try (final InputStream planInputStream = new FileInputStream(plan)) {
+      try (final InputStream planInputStream = classLoader.getResourceAsStream(args[0])) {
         final JsonMessageSource jsonMessageSource = new JsonMessageSource(planInputStream);
         if (!jsonMessageSource.getTestVersion().equals("2016.1")) {
           throw new IllegalArgumentException("Unexpected test version");
