@@ -47,7 +47,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<junit.version>4.11</junit.version>
+		<junit.version>4.13.1</junit.version>
 		<java.version>1.8</java.version>
 		<sbe-tool.version>1.5.5</sbe-tool.version>
 		<javax.json.version>1.0.4</javax.json.version>
