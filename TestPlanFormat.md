@@ -1,4 +1,4 @@
-# SBE Conformance Test Plan Format
+ # SBE Conformance Test Plan Format
 
 ## Overview
 A test file supplies expected values to test injectors and SBE implementations under test. It is formatted as a JSON document. See [The JSON Data Interchange Format ](http://www.ecma-international.org/publications/standards/Ecma-262.htm)
