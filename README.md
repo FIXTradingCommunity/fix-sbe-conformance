@@ -1,6 +1,6 @@
 # FIX Simple Binary Conformance Test
 
-Simple Binary Encoding (SBE) is a [standard](https://github.com/FIXTradingCommunity/fix-simple-binary-encoding) for binary message encoding. SBE is part of a family of protocols created by the High Performance Working Group of the FIX Trading Community. SBE is a presentation layer protocol (layer 6). 
+Simple Binary Encoding (SBE) is a [standard](https://github.com/FIXTradingCommunity/fix-simple-binary-encoding) for binary message encoding. SBE is part of a family of protocols created by the High Performance Working Group of the FIX Trading Community. SBE is a presentation layer protocol (layer 6).
 
 This project provides a conformance test suite to verify interoperability of SBE implementations.
 
@@ -19,12 +19,12 @@ Implementors are responsible for developing an application that ...
 * Reads the test plan file for expected values to set.
 * Encodes response messages and writes the buffer to a file.
 
-If developed in Java, realize the Responder interface. However, all data is passed through files, and all that really matters is behavior. Any programming language or method can be used. 
+If developed in Java, realize the Responder interface. However, all data is passed through files, and all that really matters is behavior. Any programming language or method can be used.
 
 After writing the response file, invoke the Validator to verify the response messages meet expectations. If not, the a report of differences is produced.
 
 ## License
-© Copyright 2016 FIX Protocol Limited
+© Copyright 2026 FIX Protocol Limited
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,10 +39,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ## Prerequisites
-This project requires Java 8. It should run on any platform for which the JVM is supported. 
+This project requires Java 8. It should run on any platform for which the JVM is supported.
 
 Note that SBE implementations under test may be written in any programming language. All data to and from a tested implementation is passed through files, which should be platform independent.
 
 ## Build
-The project is built with Maven. 
-
+The project is built with Maven.
